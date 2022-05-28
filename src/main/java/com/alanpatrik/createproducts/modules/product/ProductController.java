@@ -1,5 +1,8 @@
 package com.alanpatrik.createproducts.modules.product;
 
+import com.alanpatrik.createproducts.exceptions.CustomBadRequestException;
+import com.alanpatrik.createproducts.exceptions.CustomNotFoundException;
+import com.alanpatrik.createproducts.http.HttpResponseDTO;
 import com.alanpatrik.createproducts.modules.product.dto.ProductRequestDTO;
 import com.alanpatrik.createproducts.modules.product.dto.ProductResponseDTO;
 import lombok.RequiredArgsConstructor;
@@ -18,38 +21,38 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public ResponseEntity<List<ProductResponseDTO>> getAll() {
+    public ResponseEntity<HttpResponseDTO<List<ProductResponseDTO>>> getAll() {
         List<ProductResponseDTO> productResponseDTOList = productService.getAll();
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(productResponseDTOList);
+                .body(new HttpResponseDTO<>(HttpStatus.OK, productResponseDTOList));
     }
 
     @PostMapping
-    public ResponseEntity<ProductResponseDTO> create(@RequestBody ProductRequestDTO productRequestDTO) {
+    public ResponseEntity<HttpResponseDTO<ProductResponseDTO>> create(@RequestBody ProductRequestDTO productRequestDTO) throws CustomBadRequestException {
         ProductResponseDTO productResponseDTO = productService.create(productRequestDTO);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(productResponseDTO);
+                .body(new HttpResponseDTO<>(HttpStatus.OK, productResponseDTO));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProductResponseDTO> update(@PathVariable Long id, @RequestBody ProductRequestDTO productRequestDTO) {
+    public ResponseEntity<HttpResponseDTO<ProductResponseDTO>> update(@PathVariable Long id, @RequestBody ProductRequestDTO productRequestDTO) throws CustomNotFoundException {
         ProductResponseDTO productResponseDTO = productService.update(id, productRequestDTO);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(productResponseDTO);
+                .body(new HttpResponseDTO<>(HttpStatus.OK, productResponseDTO));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity delete(@PathVariable Long id) {
+    public ResponseEntity<HttpResponseDTO> delete(@PathVariable Long id) throws CustomNotFoundException {
         productService.delete(id);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .contentType(MediaType.APPLICATION_JSON)
-                .build();
+                .body(new HttpResponseDTO<>(HttpStatus.NO_CONTENT));
     }
 }

@@ -1,11 +1,14 @@
 package com.alanpatrik.createproducts.modules.product;
 
+import com.alanpatrik.createproducts.exceptions.CustomBadRequestException;
+import com.alanpatrik.createproducts.exceptions.CustomNotFoundException;
 import com.alanpatrik.createproducts.modules.product.dto.ProductRequestDTO;
 import com.alanpatrik.createproducts.modules.product.dto.ProductResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -15,8 +18,19 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final ProductMapper mapper = ProductMapper.INSTANCE;
 
-    public Product verifyIfExistProductById(Long id) {
-        return productRepository.findById(id).orElseThrow();
+    private Product verifyIfExistProductById(Long id) throws CustomNotFoundException {
+        return productRepository.findById(id).orElseThrow(() -> new CustomNotFoundException(
+                String.format("Produto com o id %s não foi encontrado.", id)));
+    }
+
+    private void verifyIfProductAlreadyExists(String name) throws CustomBadRequestException {
+        Optional<Product> product = productRepository.findByName(name);
+
+        if (product.isPresent()) {
+            throw new CustomBadRequestException(
+                    String.format("Produto com o nome %s já foi cadastrado", name)
+            );
+        }
     }
 
     @Override
@@ -38,7 +52,9 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponseDTO create(ProductRequestDTO productRequestDTO) {
+    public ProductResponseDTO create(ProductRequestDTO productRequestDTO) throws CustomBadRequestException {
+        verifyIfProductAlreadyExists(productRequestDTO.getName());
+
         Product product = new Product();
         product.setName(productRequestDTO.getName());
         product.setPrice(productRequestDTO.getPrice());
@@ -49,7 +65,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponseDTO update(Long id, ProductRequestDTO productRequestDTO) {
+    public ProductResponseDTO update(Long id, ProductRequestDTO productRequestDTO) throws CustomNotFoundException {
         Product receivedProduct = verifyIfExistProductById(id);
         receivedProduct.setName(productRequestDTO.getName());
         receivedProduct.setPrice(productRequestDTO.getPrice());
@@ -59,7 +75,8 @@ public class ProductServiceImpl implements ProductService {
         return mapper.toResponse(receivedProduct);
     }
 
-    public void delete(Long id) {
+    @Override
+    public void delete(Long id) throws CustomNotFoundException {
         Product receivedProduct = verifyIfExistProductById(id);
         productRepository.delete(receivedProduct);
     }
